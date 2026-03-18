@@ -795,7 +795,7 @@ function renderBoard() {
             }
           </div>
           <p class="support-copy">
-            Podés subir una foto para detectar cartas o cargar toda la secuencia manualmente tocando la paleta.
+            Podés cargar toda la secuencia manualmente tocando la paleta. La foto es opcional y solo sirve para detección automática.
           </p>
           <p class="support-copy">
             El orden importa: izquierda a derecha en fila, o por filas de arriba hacia abajo en matriz.
@@ -810,7 +810,7 @@ function renderBoard() {
                         <article class="upload-card">
                           <h4>${escapeHtml(player.name)}</h4>
                           <label>
-                            Foto de la jugada
+                            Foto de la jugada (opcional)
                             <input
                               type="file"
                               name="photo-${player.id}"
@@ -818,7 +818,7 @@ function renderBoard() {
                               capture="environment"
                               data-file-input="true"
                             />
-                            <span class="file-hint">Sacá una foto o elegí una imagen desde el teléfono.</span>
+                            <span class="file-hint">Opcional. Si no subís foto, cargá la secuencia manualmente.</span>
                           </label>
                           <div class="sequence-tools">
                             <button type="button" class="ghost-btn detect-btn" data-detect-player="${player.id}">
