@@ -141,6 +141,7 @@ function buildPlayers(names) {
     roundScores: Array(TOTAL_ROUNDS).fill(0),
     roundNotes: Array(TOTAL_ROUNDS).fill(''),
     roundSource: Array(TOTAL_ROUNDS).fill(''),
+    detectedCards: Array.from({ length: TOTAL_ROUNDS }, () => []),
     photos: Array(TOTAL_ROUNDS).fill(null),
     puddings: 0,
     puddingScore: 0,
@@ -160,20 +161,21 @@ function countCards(cards) {
 function scorePlayerRound(cards) {
   const counts = countCards(cards);
   let score = 0;
-  let pendingWasabi = 0;
+  const wasabiIndexes = [];
 
   score += Math.floor((counts.tempura || 0) / 2) * 5;
   score += Math.floor((counts.sashimi || 0) / 3) * 10;
   score += GYOZA_SCORES[Math.min(counts.gyoza || 0, 5)];
 
-  for (const cardId of cards) {
+  for (let index = 0; index < cards.length; index += 1) {
+    const cardId = cards[index];
     const card = CARD_DEFS[cardId];
     if (!card) {
       continue;
     }
 
     if (card.kind === 'wasabi') {
-      pendingWasabi += 1;
+      wasabiIndexes.push(index);
       continue;
     }
 
@@ -181,9 +183,10 @@ function scorePlayerRound(cards) {
       continue;
     }
 
-    if (pendingWasabi > 0) {
+    const usableWasabiIndex = wasabiIndexes.findIndex(wasabiIndex => wasabiIndex < index);
+    if (usableWasabiIndex !== -1) {
       score += card.nigiri * 3;
-      pendingWasabi -= 1;
+      wasabiIndexes.splice(usableWasabiIndex, 1);
     } else {
       score += card.nigiri;
     }
@@ -844,6 +847,19 @@ function renderBoard() {
                             <div class="selected-sequence" data-sequence-list="${player.id}">
                               ${renderSequenceCards(player.roundCards[state.scoringRound - 1] || [])}
                             </div>
+                            <div class="detected-preview">
+                              <div class="detected-preview-head">
+                                <strong>Sugerencia detectada</strong>
+                                <span>${
+                                  (player.detectedCards[state.scoringRound - 1] || []).length
+                                    ? `${player.detectedCards[state.scoringRound - 1].length} cartas`
+                                    : 'sin sugerencia'
+                                }</span>
+                              </div>
+                              <div class="selected-sequence selected-sequence-preview" data-detected-list="${player.id}">
+                                ${renderSequenceCards(player.detectedCards[state.scoringRound - 1] || [])}
+                              </div>
+                            </div>
                             <div class="card-palette" data-card-palette="${player.id}">
                               ${renderCardPalette()}
                             </div>
@@ -964,6 +980,13 @@ function bindEvents() {
       }
     };
 
+    const updateDetectedUI = (playerId, cards) => {
+      const list = scoringForm.querySelector(`[data-detected-list="${playerId}"]`);
+      if (list) {
+        list.innerHTML = renderSequenceCards(cards);
+      }
+    };
+
     scoringForm.querySelectorAll('[data-add-card]').forEach(button => {
       button.addEventListener('click', () => {
         const playerId = button.closest('.upload-card').querySelector('[data-sequence-input]').dataset.sequenceInput;
@@ -1021,8 +1044,13 @@ function bindEvents() {
         if (detected.error) {
           errorNode.textContent = detected.error;
         } else {
+          const player = state.players.find(item => item.id === playerId);
+          if (player) {
+            player.detectedCards[state.scoringRound - 1] = [...detected.cards];
+          }
           input.value = detected.cards.join(',');
           updateSequenceUI(playerId);
+          updateDetectedUI(playerId, detected.cards);
           errorNode.textContent = '';
         }
         button.disabled = false;

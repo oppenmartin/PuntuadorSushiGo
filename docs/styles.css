@@ -540,6 +540,20 @@ th {
   gap: 0.8rem;
 }
 
+.detected-preview {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.detected-preview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .sequence-head {
   display: flex;
   align-items: center;
@@ -561,6 +575,11 @@ th {
   border: 1px dashed rgba(101, 77, 58, 0.35);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.52);
+}
+
+.selected-sequence-preview {
+  background: rgba(22, 116, 111, 0.08);
+  border-color: rgba(22, 116, 111, 0.24);
 }
 
 .sequence-empty {

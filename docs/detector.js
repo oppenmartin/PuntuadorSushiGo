@@ -1,4 +1,23 @@
 (function () {
+  const TEMPLATE_SOURCES = {
+    maki1: './assets/Maki1.jpeg',
+    maki2: './assets/Maki2.jpeg',
+    maki3: './assets/Maki3.jpeg',
+    tempura: './assets/Tempura.jpeg',
+    sashimi: './assets/Sashimi.jpeg',
+    gyoza: './assets/Gyoza.jpeg',
+    wasabi: './assets/Wasabi.jpeg',
+    nigiri_egg: './assets/Niguiri huevo.jpeg',
+    nigiri_salmon: './assets/Niguiri Salmon.jpeg',
+    nigiri_squid: './assets/Niguiri.jpeg',
+    chopsticks: './assets/Palillos.jpeg',
+    pudding: './assets/Postre.jpeg'
+  };
+
+  const SIGNATURE_WIDTH = 24;
+  const SIGNATURE_HEIGHT = 36;
+  let templateCachePromise = null;
+
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
   }
@@ -54,167 +73,13 @@
     return averageColors(colors);
   }
 
-  function classifyByColor(color) {
-    if (color.r > 170 && color.g < 110 && color.b < 110) {
-      return 'maki';
-    }
-
-    if (color.r > 205 && color.g > 185 && color.b < 120) {
-      return 'yellow';
-    }
-
-    if (color.r > 185 && color.g > 180 && color.b > 215) {
-      return 'tempura';
-    }
-
-    if (color.b > 170 && color.g > 160 && color.r < 190) {
-      return 'blue';
-    }
-
-    if (color.g > 175 && color.r > 145 && color.b < 110) {
-      return 'lime';
-    }
-
-    if (color.r > 210 && color.g > 165 && color.b > 170) {
-      return 'pudding';
-    }
-
-    return 'unknown';
-  }
-
-  function countDarkTopIcons(ctx) {
-    const width = ctx.canvas.width;
-    const height = ctx.canvas.height;
-    const image = ctx.getImageData(0, 0, width, Math.max(1, Math.floor(height * 0.2)));
-    const columns = new Array(width).fill(0);
-
-    for (let y = 0; y < image.height; y += 1) {
-      for (let x = 0; x < width; x += 1) {
-        const index = (y * width + x) * 4;
-        const color = toRgb(image.data, index);
-        const dark = color.r < 70 && color.g < 70 && color.b < 70;
-        if (dark) {
-          columns[x] += 1;
-        }
-      }
-    }
-
-    let groups = 0;
-    let active = false;
-    for (const value of columns) {
-      if (value > image.height * 0.09) {
-        if (!active) {
-          groups += 1;
-          active = true;
-        }
-      } else {
-        active = false;
-      }
-    }
-
-    return clamp(groups, 1, 3);
-  }
-
-  function classifyYellowCard(ctx) {
-    const topCenter = averageSample(
-      ctx,
-      ctx.canvas.width * 0.28,
-      ctx.canvas.height * 0.28,
-      ctx.canvas.width * 0.44,
-      ctx.canvas.height * 0.18
-    );
-    const middle = averageSample(
-      ctx,
-      ctx.canvas.width * 0.25,
-      ctx.canvas.height * 0.42,
-      ctx.canvas.width * 0.5,
-      ctx.canvas.height * 0.24
-    );
-
-    if (middle.g > middle.r && middle.g > middle.b) {
-      return 'wasabi';
-    }
-
-    if (topCenter.r > 230 && topCenter.g > 210 && topCenter.b > 190) {
-      return 'nigiri_squid';
-    }
-
-    if (topCenter.r > 220 && topCenter.g > 170 && topCenter.g < 220) {
-      return 'nigiri_salmon';
-    }
-
-    return 'nigiri_egg';
-  }
-
-  function classifyBlueCard(ctx) {
-    const center = averageSample(
-      ctx,
-      ctx.canvas.width * 0.3,
-      ctx.canvas.height * 0.32,
-      ctx.canvas.width * 0.4,
-      ctx.canvas.height * 0.4
-    );
-
-    if (center.r > 155 && center.g > 120 && center.b < 110) {
-      return 'chopsticks';
-    }
-
-    return 'gyoza';
-  }
-
-  function classifyLimeCard(ctx) {
-    const center = averageSample(
-      ctx,
-      ctx.canvas.width * 0.28,
-      ctx.canvas.height * 0.45,
-      ctx.canvas.width * 0.44,
-      ctx.canvas.height * 0.22
-    );
-
-    if (center.r > 170 && center.b > 120) {
-      return 'sashimi';
-    }
-
-    return 'wasabi';
-  }
-
-  function classifyCard(cropCanvas) {
-    const ctx = cropCanvas.getContext('2d');
-    const bgColor = averageSample(
-      ctx,
-      cropCanvas.width * 0.08,
-      cropCanvas.height * 0.08,
-      cropCanvas.width * 0.2,
-      cropCanvas.height * 0.2
-    );
-
-    const family = classifyByColor(bgColor);
-
-    if (family === 'maki') {
-      return `maki${countDarkTopIcons(ctx)}`;
-    }
-
-    if (family === 'yellow') {
-      return classifyYellowCard(ctx);
-    }
-
-    if (family === 'tempura') {
-      return 'tempura';
-    }
-
-    if (family === 'blue') {
-      return classifyBlueCard(ctx);
-    }
-
-    if (family === 'lime') {
-      return classifyLimeCard(ctx);
-    }
-
-    if (family === 'pudding') {
-      return 'pudding';
-    }
-
-    return null;
+  function loadImage(src) {
+    const img = new Image();
+    return new Promise((resolve, reject) => {
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
   }
 
   function loadBitmapFallback(file) {
@@ -243,9 +108,50 @@
     return loadBitmapFallback(file);
   }
 
+  function imageToCanvas(image, width, height) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(image, 0, 0, width, height);
+    return canvas;
+  }
+
+  function createSignature(canvas) {
+    const normalized = imageToCanvas(canvas, SIGNATURE_WIDTH, SIGNATURE_HEIGHT);
+    const ctx = normalized.getContext('2d', { willReadFrequently: true });
+    const image = ctx.getImageData(0, 0, SIGNATURE_WIDTH, SIGNATURE_HEIGHT);
+    const signature = [];
+
+    for (let index = 0; index < image.data.length; index += 4) {
+      signature.push(image.data[index] / 255);
+      signature.push(image.data[index + 1] / 255);
+      signature.push(image.data[index + 2] / 255);
+    }
+
+    return signature;
+  }
+
+  async function loadTemplates() {
+    if (!templateCachePromise) {
+      templateCachePromise = Promise.all(
+        Object.entries(TEMPLATE_SOURCES).map(async ([id, src]) => {
+          const image = await loadImage(src);
+          const canvas = imageToCanvas(image, SIGNATURE_WIDTH, SIGNATURE_HEIGHT);
+          return {
+            id,
+            signature: createSignature(canvas)
+          };
+        })
+      );
+    }
+
+    return templateCachePromise;
+  }
+
   async function createCanvasFromFile(file) {
     const bitmap = await loadBitmap(file);
-    const ratio = Math.min(1, 1400 / Math.max(bitmap.width, bitmap.height));
+    const ratio = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
     const canvas = document.createElement('canvas');
     canvas.width = Math.max(1, Math.round(bitmap.width * ratio));
     canvas.height = Math.max(1, Math.round(bitmap.height * ratio));
@@ -257,7 +163,7 @@
   function estimateBackground(ctx) {
     const width = ctx.canvas.width;
     const height = ctx.canvas.height;
-    const sample = Math.max(6, Math.floor(Math.min(width, height) * 0.04));
+    const sample = Math.max(8, Math.floor(Math.min(width, height) * 0.05));
     return averageColors([
       averageSample(ctx, 0, 0, sample, sample),
       averageSample(ctx, width - sample, 0, sample, sample),
@@ -266,24 +172,66 @@
     ]);
   }
 
+  function dilate(mask, width, height) {
+    const out = new Uint8Array(mask.length);
+    for (let y = 1; y < height - 1; y += 1) {
+      for (let x = 1; x < width - 1; x += 1) {
+        let value = 0;
+        for (let dy = -1; dy <= 1; dy += 1) {
+          for (let dx = -1; dx <= 1; dx += 1) {
+            if (mask[(y + dy) * width + (x + dx)]) {
+              value = 1;
+            }
+          }
+        }
+        out[y * width + x] = value;
+      }
+    }
+    return out;
+  }
+
+  function erode(mask, width, height) {
+    const out = new Uint8Array(mask.length);
+    for (let y = 1; y < height - 1; y += 1) {
+      for (let x = 1; x < width - 1; x += 1) {
+        let value = 1;
+        for (let dy = -1; dy <= 1; dy += 1) {
+          for (let dx = -1; dx <= 1; dx += 1) {
+            if (!mask[(y + dy) * width + (x + dx)]) {
+              value = 0;
+            }
+          }
+        }
+        out[y * width + x] = value;
+      }
+    }
+    return out;
+  }
+
   function buildForegroundMask(canvas) {
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     const width = canvas.width;
     const height = canvas.height;
     const background = estimateBackground(ctx);
     const image = ctx.getImageData(0, 0, width, height);
-    const mask = new Uint8Array(width * height);
+    let mask = new Uint8Array(width * height);
+    const backgroundBrightness = (background.r + background.g + background.b) / 3;
 
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
         const index = (y * width + x) * 4;
         const color = toRgb(image.data, index);
+        const brightness = (color.r + color.g + color.b) / 3;
         const distance = rgbDistance(color, background);
-        if (distance > 42) {
+        if (distance > 18 || brightness > backgroundBrightness + 10) {
           mask[y * width + x] = 1;
         }
       }
     }
+
+    mask = dilate(mask, width, height);
+    mask = erode(mask, width, height);
+    mask = dilate(mask, width, height);
 
     return { mask, width, height };
   }
@@ -316,29 +264,33 @@
         maxX = Math.max(maxX, x);
         maxY = Math.max(maxY, y);
 
-        const neighbors = [current - 1, current + 1, current - width, current + width];
-        for (const next of neighbors) {
-          if (next < 0 || next >= mask.length || visited[next] || !mask[next]) {
-            continue;
+        for (let dy = -1; dy <= 1; dy += 1) {
+          for (let dx = -1; dx <= 1; dx += 1) {
+            if (dx === 0 && dy === 0) {
+              continue;
+            }
+            const nextX = x + dx;
+            const nextY = y + dy;
+            if (nextX < 0 || nextY < 0 || nextX >= width || nextY >= height) {
+              continue;
+            }
+            const next = nextY * width + nextX;
+            if (visited[next] || !mask[next]) {
+              continue;
+            }
+            visited[next] = 1;
+            queue.push(next);
           }
-
-          const nextX = next % width;
-          const nextY = Math.floor(next / width);
-          if (Math.abs(nextX - x) + Math.abs(nextY - y) !== 1) {
-            continue;
-          }
-
-          visited[next] = 1;
-          queue.push(next);
         }
       }
 
       const boxWidth = maxX - minX + 1;
       const boxHeight = maxY - minY + 1;
       const aspect = boxWidth / boxHeight;
-      const minArea = width * height * 0.015;
+      const fill = area / (boxWidth * boxHeight);
+      const minArea = width * height * 0.0025;
 
-      if (area >= minArea && aspect > 0.42 && aspect < 0.9) {
+      if (area >= minArea && aspect > 0.38 && aspect < 0.9 && fill > 0.2) {
         boxes.push({
           x: minX,
           y: minY,
@@ -349,12 +301,50 @@
       }
     }
 
-    return boxes.sort((a, b) => a.x - b.x);
+    return boxes;
+  }
+
+  function intersects(a, b) {
+    return !(
+      a.x + a.width + 10 < b.x ||
+      b.x + b.width + 10 < a.x ||
+      a.y + a.height + 10 < b.y ||
+      b.y + b.height + 10 < a.y
+    );
+  }
+
+  function mergeBoxes(boxes) {
+    const pending = [...boxes].sort((a, b) => a.x - b.x);
+    const merged = [];
+
+    while (pending.length) {
+      const current = pending.shift();
+      let changed = true;
+
+      while (changed) {
+        changed = false;
+        for (let index = pending.length - 1; index >= 0; index -= 1) {
+          if (!intersects(current, pending[index])) {
+            continue;
+          }
+          const candidate = pending.splice(index, 1)[0];
+          current.x = Math.min(current.x, candidate.x);
+          current.y = Math.min(current.y, candidate.y);
+          current.width = Math.max(current.x + current.width, candidate.x + candidate.width) - current.x;
+          current.height = Math.max(current.y + current.height, candidate.y + candidate.height) - current.y;
+          changed = true;
+        }
+      }
+
+      merged.push(current);
+    }
+
+    return merged;
   }
 
   function cropCanvas(canvas, box) {
-    const paddingX = Math.round(box.width * 0.04);
-    const paddingY = Math.round(box.height * 0.04);
+    const paddingX = Math.round(box.width * 0.03);
+    const paddingY = Math.round(box.height * 0.03);
     const x = clamp(box.x - paddingX, 0, canvas.width - 1);
     const y = clamp(box.y - paddingY, 0, canvas.height - 1);
     const width = clamp(box.width + paddingX * 2, 1, canvas.width - x);
@@ -371,8 +361,7 @@
       return [];
     }
 
-    const averageHeight =
-      boxes.reduce((sum, box) => sum + box.height, 0) / boxes.length;
+    const averageHeight = boxes.reduce((sum, box) => sum + box.height, 0) / boxes.length;
     const rowThreshold = averageHeight * 0.45;
     const sortedByTop = [...boxes].sort((a, b) => {
       if (Math.abs(a.y - b.y) <= rowThreshold) {
@@ -394,27 +383,122 @@
 
     rows.sort((a, b) => a.y - b.y);
     rows.forEach(row => row.items.sort((a, b) => a.x - b.x));
-
     return rows.flatMap(row => row.items);
+  }
+
+  function spansFromProjection(values, threshold) {
+    const spans = [];
+    let start = -1;
+
+    for (let index = 0; index < values.length; index += 1) {
+      if (values[index] >= threshold) {
+        if (start === -1) {
+          start = index;
+        }
+      } else if (start !== -1) {
+        spans.push({ start, end: index - 1 });
+        start = -1;
+      }
+    }
+
+    if (start !== -1) {
+      spans.push({ start, end: values.length - 1 });
+    }
+
+    return spans.filter(span => span.end - span.start > 20);
+  }
+
+  function fallbackGridBoxes(maskData) {
+    const { mask, width, height } = maskData;
+    const rowSums = new Array(height).fill(0);
+    const colSums = new Array(width).fill(0);
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const value = mask[y * width + x];
+        rowSums[y] += value;
+        colSums[x] += value;
+      }
+    }
+
+    const rowThreshold = width * 0.015;
+    const rowSpans = spansFromProjection(rowSums, rowThreshold);
+    const boxes = [];
+
+    rowSpans.forEach(row => {
+      const localCols = new Array(width).fill(0);
+      for (let y = row.start; y <= row.end; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          localCols[x] += mask[y * width + x];
+        }
+      }
+
+      const colThreshold = Math.max(2, (row.end - row.start) * 0.08);
+      const colSpans = spansFromProjection(localCols, colThreshold);
+
+      colSpans.forEach(col => {
+        boxes.push({
+          x: col.start,
+          y: row.start,
+          width: col.end - col.start + 1,
+          height: row.end - row.start + 1
+        });
+      });
+    });
+
+    return boxes.filter(box => box.width / box.height > 0.38 && box.width / box.height < 0.9);
+  }
+
+  function compareSignatures(a, b) {
+    let total = 0;
+    for (let index = 0; index < a.length; index += 1) {
+      total += Math.abs(a[index] - b[index]);
+    }
+    return total / a.length;
+  }
+
+  async function classifyCard(cropCanvas) {
+    const templates = await loadTemplates();
+    const signature = createSignature(cropCanvas);
+    let best = null;
+
+    for (const template of templates) {
+      const distance = compareSignatures(signature, template.signature);
+      if (!best || distance < best.distance) {
+        best = {
+          id: template.id,
+          distance
+        };
+      }
+    }
+
+    return best;
   }
 
   async function detect(file) {
     const canvas = await createCanvasFromFile(file);
     const mask = buildForegroundMask(canvas);
-    const boxes = sortBoxesReadingOrder(findComponents(mask));
+    let boxes = mergeBoxes(findComponents(mask));
+    if (!boxes.length) {
+      boxes = fallbackGridBoxes(mask);
+    }
+    boxes = sortBoxesReadingOrder(boxes);
     const cards = [];
+    const matches = [];
 
     for (const box of boxes) {
       const crop = cropCanvas(canvas, box);
-      const cardId = classifyCard(crop);
-      if (cardId) {
-        cards.push(cardId);
+      const best = await classifyCard(crop);
+      if (best) {
+        cards.push(best.id);
+        matches.push({ ...best, box });
       }
     }
 
     return {
       cards,
-      boxes
+      boxes,
+      matches
     };
   }
 
