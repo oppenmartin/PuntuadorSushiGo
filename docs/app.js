@@ -142,6 +142,7 @@ function buildPlayers(names) {
     roundNotes: Array(TOTAL_ROUNDS).fill(''),
     roundSource: Array(TOTAL_ROUNDS).fill(''),
     detectedCards: Array.from({ length: TOTAL_ROUNDS }, () => []),
+    detectionDebug: Array(TOTAL_ROUNDS).fill(null),
     photos: Array(TOTAL_ROUNDS).fill(null),
     puddings: 0,
     puddingScore: 0,
@@ -859,6 +860,23 @@ function renderBoard() {
                               <div class="selected-sequence selected-sequence-preview" data-detected-list="${player.id}">
                                 ${renderSequenceCards(player.detectedCards[state.scoringRound - 1] || [])}
                               </div>
+                              ${
+                                player.detectionDebug[state.scoringRound - 1]
+                                  ? `
+                                    <div class="detected-debug">
+                                      <div class="detected-debug-meta">
+                                        <span>Cajas detectadas: ${player.detectionDebug[state.scoringRound - 1].boxCount}</span>
+                                        <span>Cartas clasificadas: ${player.detectionDebug[state.scoringRound - 1].cardCount}</span>
+                                      </div>
+                                      <img
+                                        class="detected-debug-image"
+                                        src="${player.detectionDebug[state.scoringRound - 1].debugImage}"
+                                        alt="Diagnóstico de detección para ${escapeHtml(player.name)}"
+                                      />
+                                    </div>
+                                  `
+                                  : ''
+                              }
                             </div>
                             <div class="card-palette" data-card-palette="${player.id}">
                               ${renderCardPalette()}
@@ -1047,6 +1065,11 @@ function bindEvents() {
           const player = state.players.find(item => item.id === playerId);
           if (player) {
             player.detectedCards[state.scoringRound - 1] = [...detected.cards];
+            player.detectionDebug[state.scoringRound - 1] = {
+              boxCount: detected.boxes.length,
+              cardCount: detected.cards.length,
+              debugImage: detected.debugImage
+            };
           }
           input.value = detected.cards.join(',');
           updateSequenceUI(playerId);

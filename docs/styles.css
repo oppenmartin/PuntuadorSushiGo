@@ -582,6 +582,26 @@ th {
   border-color: rgba(22, 116, 111, 0.24);
 }
 
+.detected-debug {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.detected-debug-meta {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.detected-debug-image {
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid rgba(101, 77, 58, 0.18);
+  box-shadow: 0 12px 26px rgba(61, 35, 22, 0.14);
+}
+
 .sequence-empty {
   margin: 0;
   color: var(--muted);

@@ -356,6 +356,27 @@
     return crop;
   }
 
+  function drawDebugOverlay(canvas, boxes) {
+    const debugCanvas = document.createElement('canvas');
+    debugCanvas.width = canvas.width;
+    debugCanvas.height = canvas.height;
+    const ctx = debugCanvas.getContext('2d');
+    ctx.drawImage(canvas, 0, 0);
+    ctx.lineWidth = 4;
+    ctx.font = '22px sans-serif';
+
+    boxes.forEach((box, index) => {
+      ctx.strokeStyle = 'rgba(255, 50, 50, 0.95)';
+      ctx.fillStyle = 'rgba(255, 50, 50, 0.2)';
+      ctx.strokeRect(box.x, box.y, box.width, box.height);
+      ctx.fillRect(box.x, box.y, box.width, box.height);
+      ctx.fillStyle = '#111';
+      ctx.fillText(String(index + 1), box.x + 8, Math.max(24, box.y + 24));
+    });
+
+    return debugCanvas.toDataURL('image/jpeg', 0.9);
+  }
+
   function sortBoxesReadingOrder(boxes) {
     if (!boxes.length) {
       return [];
@@ -498,7 +519,8 @@
     return {
       cards,
       boxes,
-      matches
+      matches,
+      debugImage: drawDebugOverlay(canvas, boxes)
     };
   }
 
