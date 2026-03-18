@@ -342,6 +342,17 @@
     return merged;
   }
 
+  function normalizeBoxes(boxes) {
+    return boxes
+      .filter(box => box.width > 20 && box.height > 20)
+      .map(box => ({
+        x: Math.round(box.x),
+        y: Math.round(box.y),
+        width: Math.round(box.width),
+        height: Math.round(box.height)
+      }));
+  }
+
   function cropCanvas(canvas, box) {
     const paddingX = Math.round(box.width * 0.03);
     const paddingY = Math.round(box.height * 0.03);
@@ -467,7 +478,23 @@
       });
     });
 
-    return boxes.filter(box => box.width / box.height > 0.38 && box.width / box.height < 0.9);
+    return normalizeBoxes(
+      boxes.filter(box => box.width / box.height > 0.38 && box.width / box.height < 0.9)
+    );
+  }
+
+  function shouldUseGridFallback(boxes, canvas) {
+    if (!boxes.length) {
+      return true;
+    }
+
+    if (boxes.length <= 2) {
+      return true;
+    }
+
+    const canvasArea = canvas.width * canvas.height;
+    const giantBox = boxes.some(box => box.width * box.height > canvasArea * 0.22);
+    return giantBox;
   }
 
   function compareSignatures(a, b) {
@@ -499,10 +526,16 @@
   async function detect(file) {
     const canvas = await createCanvasFromFile(file);
     const mask = buildForegroundMask(canvas);
-    let boxes = mergeBoxes(findComponents(mask));
-    if (!boxes.length) {
-      boxes = fallbackGridBoxes(mask);
+    const componentBoxes = normalizeBoxes(mergeBoxes(findComponents(mask)));
+    const gridBoxes = fallbackGridBoxes(mask);
+
+    let boxes = componentBoxes;
+    if (shouldUseGridFallback(componentBoxes, canvas) && gridBoxes.length > componentBoxes.length) {
+      boxes = gridBoxes;
+    } else if (!boxes.length) {
+      boxes = gridBoxes;
     }
+
     boxes = sortBoxesReadingOrder(boxes);
     const cards = [];
     const matches = [];
