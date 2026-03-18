@@ -326,6 +326,12 @@ function updatePlayerCount(value) {
   render();
 }
 
+function previewPlayerCount(value) {
+  state.playerCount = Number(value);
+  saveState();
+  render();
+}
+
 function confirmPlayers(formData) {
   const names = [];
   for (let index = 0; index < state.playerCount; index += 1) {
@@ -482,10 +488,7 @@ async function applyRoundEntries(formData) {
   for (const player of state.players) {
     const image = formData.get(`photo-${player.id}`);
     const sequenceValue = String(formData.get(`sequence-${player.id}`) || '').trim();
-
-    if (!(image instanceof File) || image.size === 0) {
-      return `Falta subir la foto de ${player.name}.`;
-    }
+    const hasPhoto = image instanceof File && image.size > 0;
 
     let cards = [];
     let source = '';
@@ -498,6 +501,9 @@ async function applyRoundEntries(formData) {
       cards = parsed.cards;
       source = 'manual';
     } else {
+      if (!hasPhoto) {
+        return `Falta subir la foto o cargar las cartas manualmente para ${player.name}.`;
+      }
       const detected = await detectCardsFromPhoto(image);
       if (detected.error) {
         return `${player.name}: ${detected.error}`;
@@ -515,11 +521,13 @@ async function applyRoundEntries(formData) {
     player.roundCards[round - 1] = cards;
     player.roundNotes[round - 1] = formatCards(cards);
     player.roundSource[round - 1] = source;
-    player.photos[round - 1] = {
-      name: image.name,
-      size: image.size,
-      updatedAt: new Date().toISOString()
-    };
+    player.photos[round - 1] = hasPhoto
+      ? {
+          name: image.name,
+          size: image.size,
+          updatedAt: new Date().toISOString()
+        }
+      : null;
   }
 
   computeScores();
@@ -787,7 +795,7 @@ function renderBoard() {
             }
           </div>
           <p class="support-copy">
-            Subí la foto, dejá que la app intente detectar las cartas y, si hace falta, corregí la secuencia tocando cartas de la paleta.
+            Podés subir una foto para detectar cartas o cargar toda la secuencia manualmente tocando la paleta.
           </p>
           <p class="support-copy">
             El orden importa: izquierda a derecha en fila, o por filas de arriba hacia abajo en matriz.
@@ -895,6 +903,13 @@ function render() {
 function bindEvents() {
   const playerCountForm = document.querySelector('#playerCountForm');
   if (playerCountForm) {
+    const playerCountSelect = playerCountForm.querySelector('#playerCount');
+    if (playerCountSelect) {
+      playerCountSelect.addEventListener('change', event => {
+        previewPlayerCount(event.target.value);
+      });
+    }
+
     playerCountForm.addEventListener('submit', event => {
       event.preventDefault();
       const formData = new FormData(playerCountForm);
