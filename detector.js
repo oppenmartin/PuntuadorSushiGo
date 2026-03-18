@@ -217,21 +217,30 @@
     return null;
   }
 
+  function loadBitmapFallback(file) {
+    const img = new Image();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = reader.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
   async function loadBitmap(file) {
     if ('createImageBitmap' in window) {
-      return createImageBitmap(file);
+      try {
+        return await createImageBitmap(file);
+      } catch (error) {
+        return loadBitmapFallback(file);
+      }
     }
 
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    return new Promise((resolve, reject) => {
-      img.onload = () => {
-        URL.revokeObjectURL(url);
-        resolve(img);
-      };
-      img.onerror = reject;
-      img.src = url;
-    });
+    return loadBitmapFallback(file);
   }
 
   async function createCanvasFromFile(file) {

@@ -78,6 +78,20 @@ const CARD_DEFS = {
 };
 
 const GYOZA_SCORES = [0, 1, 3, 6, 10, 15];
+const CARD_ORDER = [
+  'maki1',
+  'maki2',
+  'maki3',
+  'tempura',
+  'sashimi',
+  'gyoza',
+  'wasabi',
+  'nigiri_egg',
+  'nigiri_salmon',
+  'nigiri_squid',
+  'chopsticks',
+  'pudding'
+];
 const state = loadState();
 
 function loadState() {
@@ -365,12 +379,54 @@ function formatCards(cards) {
   return cards.map(cardId => CARD_DEFS[cardId]?.label || cardId).join(', ');
 }
 
+function parseCardIdSequence(value) {
+  const ids = String(value || '')
+    .split(',')
+    .map(item => item.trim())
+    .filter(Boolean);
+
+  for (const id of ids) {
+    if (!CARD_DEFS[id]) {
+      return { error: `No reconozco la carta "${id}".` };
+    }
+  }
+
+  return { cards: ids };
+}
+
 function renderPuddingIcons(count) {
   if (!count) {
     return '';
   }
 
   return Array.from({ length: count }, () => '<span class="pudding-icon" aria-hidden="true">🧁</span>').join('');
+}
+
+function renderSequenceCards(cards) {
+  if (!cards.length) {
+    return '<p class="sequence-empty">Todavía no cargaste cartas.</p>';
+  }
+
+  return cards
+    .map(
+      (cardId, index) => `
+        <button type="button" class="sequence-card" data-remove-index="${index}">
+          <span class="sequence-card-index">${index + 1}</span>
+          <span class="sequence-card-label">${escapeHtml(CARD_DEFS[cardId]?.label || cardId)}</span>
+        </button>
+      `
+    )
+    .join('');
+}
+
+function renderCardPalette() {
+  return CARD_ORDER.map(
+    cardId => `
+      <button type="button" class="palette-card" data-add-card="${cardId}">
+        <span class="palette-card-name">${escapeHtml(CARD_DEFS[cardId].label)}</span>
+      </button>
+    `
+  ).join('');
 }
 
 async function detectCardsFromPhoto(file) {
@@ -388,7 +444,7 @@ async function detectCardsFromPhoto(file) {
     return result;
   } catch (error) {
     return {
-      error: 'Fallo el analisis de la imagen. Probá de nuevo o completá las cartas manualmente.'
+      error: `Fallo el analisis de la imagen. ${error?.message ? `Detalle: ${error.message}. ` : ''}Probá de nuevo o completá las cartas manualmente.`
     };
   }
 }
@@ -403,7 +459,7 @@ async function applyRoundEntries(formData) {
 
   for (const player of state.players) {
     const image = formData.get(`photo-${player.id}`);
-    const cardsText = String(formData.get(`cards-${player.id}`) || '').trim();
+    const sequenceValue = String(formData.get(`sequence-${player.id}`) || '').trim();
 
     if (!(image instanceof File) || image.size === 0) {
       return `Falta subir la foto de ${player.name}.`;
@@ -412,8 +468,8 @@ async function applyRoundEntries(formData) {
     let cards = [];
     let source = '';
 
-    if (cardsText) {
-      const parsed = parseCardsInput(cardsText);
+    if (sequenceValue) {
+      const parsed = parseCardIdSequence(sequenceValue);
       if (parsed.error) {
         return `${player.name}: ${parsed.error}`;
       }
@@ -714,13 +770,10 @@ function renderBoard() {
             }
           </div>
           <p class="support-copy">
-            Esta version ya calcula el puntaje real. Por ahora la foto se guarda y las cartas se cargan en texto;
-            el proximo paso es que el detector complete esta secuencia automaticamente.
+            Subí la foto, dejá que la app intente detectar las cartas y, si hace falta, corregí la secuencia tocando cartas de la paleta.
           </p>
           <p class="support-copy">
-            Escribí las cartas de izquierda a derecha, separadas por coma. Ejemplo:
-            <code>wasabi, nigiri de salmon, tempura, tempura, maki 2, pudin</code>.
-            Si lo dejás vacío, la app intenta detectar las cartas desde la foto.
+            El orden importa: izquierda a derecha en fila, o por filas de arriba hacia abajo en matriz.
           </p>
           ${
             nextRound
@@ -733,20 +786,43 @@ function renderBoard() {
                           <h4>${escapeHtml(player.name)}</h4>
                           <label>
                             Foto de la jugada
-                            <input type="file" name="photo-${player.id}" accept="image/*" />
+                            <input
+                              type="file"
+                              name="photo-${player.id}"
+                              accept="image/*"
+                              capture="environment"
+                              data-file-input="true"
+                            />
+                            <span class="file-hint">Sacá una foto o elegí una imagen desde el teléfono.</span>
                           </label>
-                          <label>
-                            Cartas de la ronda (${getExpectedCardsPerPlayer()})
-                            <textarea
-                              name="cards-${player.id}"
-                              rows="5"
-                              placeholder="tempura, tempura, wasabi, nigiri de calamar, maki 3, pudin"
-                            >${escapeHtml(
-                              player.roundSource[state.scoringRound - 1] === 'manual'
-                                ? player.roundNotes[state.scoringRound - 1] || ''
-                                : ''
-                            )}</textarea>
-                          </label>
+                          <div class="sequence-tools">
+                            <button type="button" class="ghost-btn detect-btn" data-detect-player="${player.id}">
+                              Detectar desde foto
+                            </button>
+                            <button type="button" class="ghost-btn clear-btn" data-clear-player="${player.id}">
+                              Limpiar
+                            </button>
+                          </div>
+                          <div class="sequence-block">
+                            <div class="sequence-head">
+                              <strong>Cartas de la ronda (${getExpectedCardsPerPlayer()})</strong>
+                              <span class="sequence-count" data-sequence-count="${player.id}">${
+                                (player.roundCards[state.scoringRound - 1] || []).length
+                              } / ${getExpectedCardsPerPlayer()}</span>
+                            </div>
+                            <input
+                              type="hidden"
+                              name="sequence-${player.id}"
+                              value="${escapeHtml((player.roundCards[state.scoringRound - 1] || []).join(','))}"
+                              data-sequence-input="${player.id}"
+                            />
+                            <div class="selected-sequence" data-sequence-list="${player.id}">
+                              ${renderSequenceCards(player.roundCards[state.scoringRound - 1] || [])}
+                            </div>
+                            <div class="card-palette" data-card-palette="${player.id}">
+                              ${renderCardPalette()}
+                            </div>
+                          </div>
                         </article>
                       `
                     )
@@ -839,6 +915,98 @@ function bindEvents() {
 
   const scoringForm = document.querySelector('#scoringForm');
   if (scoringForm) {
+    const updateSequenceUI = playerId => {
+      const input = scoringForm.querySelector(`[data-sequence-input="${playerId}"]`);
+      const list = scoringForm.querySelector(`[data-sequence-list="${playerId}"]`);
+      const count = scoringForm.querySelector(`[data-sequence-count="${playerId}"]`);
+      const cards = String(input?.value || '')
+        .split(',')
+        .map(item => item.trim())
+        .filter(Boolean);
+
+      if (list) {
+        list.innerHTML = renderSequenceCards(cards);
+      }
+      if (count) {
+        count.textContent = `${cards.length} / ${getExpectedCardsPerPlayer()}`;
+      }
+    };
+
+    scoringForm.querySelectorAll('[data-add-card]').forEach(button => {
+      button.addEventListener('click', () => {
+        const playerId = button.closest('.upload-card').querySelector('[data-sequence-input]').dataset.sequenceInput;
+        const input = scoringForm.querySelector(`[data-sequence-input="${playerId}"]`);
+        const cards = String(input.value || '')
+          .split(',')
+          .map(item => item.trim())
+          .filter(Boolean);
+        cards.push(button.dataset.addCard);
+        input.value = cards.join(',');
+        updateSequenceUI(playerId);
+      });
+    });
+
+    scoringForm.addEventListener('click', event => {
+      const removeButton = event.target.closest('[data-remove-index]');
+      if (removeButton) {
+        const playerId = removeButton.closest('.upload-card').querySelector('[data-sequence-input]').dataset.sequenceInput;
+        const input = scoringForm.querySelector(`[data-sequence-input="${playerId}"]`);
+        const cards = String(input.value || '')
+          .split(',')
+          .map(item => item.trim())
+          .filter(Boolean);
+        cards.splice(Number(removeButton.dataset.removeIndex), 1);
+        input.value = cards.join(',');
+        updateSequenceUI(playerId);
+      }
+    });
+
+    scoringForm.querySelectorAll('[data-clear-player]').forEach(button => {
+      button.addEventListener('click', () => {
+        const playerId = button.dataset.clearPlayer;
+        const input = scoringForm.querySelector(`[data-sequence-input="${playerId}"]`);
+        input.value = '';
+        updateSequenceUI(playerId);
+      });
+    });
+
+    scoringForm.querySelectorAll('[data-detect-player]').forEach(button => {
+      button.addEventListener('click', async () => {
+        const playerId = button.dataset.detectPlayer;
+        const input = scoringForm.querySelector(`[data-sequence-input="${playerId}"]`);
+        const fileInput = scoringForm.querySelector(`input[name="photo-${playerId}"]`);
+        const errorNode = document.querySelector('#scoringError');
+        const file = fileInput?.files?.[0];
+
+        if (!file) {
+          errorNode.textContent = 'Primero elegí una foto antes de detectar.';
+          return;
+        }
+
+        button.disabled = true;
+        button.textContent = 'Detectando...';
+        const detected = await detectCardsFromPhoto(file);
+        if (detected.error) {
+          errorNode.textContent = detected.error;
+        } else {
+          input.value = detected.cards.join(',');
+          updateSequenceUI(playerId);
+          errorNode.textContent = '';
+        }
+        button.disabled = false;
+        button.textContent = 'Detectar desde foto';
+      });
+    });
+
+    scoringForm.querySelectorAll('[data-file-input="true"]').forEach(input => {
+      input.addEventListener('change', () => {
+        const hint = input.parentElement.querySelector('.file-hint');
+        if (hint) {
+          hint.textContent = input.files?.[0]?.name || 'Sacá una foto o elegí una imagen desde el teléfono.';
+        }
+      });
+    });
+
     scoringForm.addEventListener('submit', async event => {
       event.preventDefault();
       const submitButton = scoringForm.querySelector('button[type="submit"]');

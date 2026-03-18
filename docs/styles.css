@@ -514,6 +514,103 @@ th {
   resize: vertical;
 }
 
+.file-hint {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.sequence-tools {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-top: 0.2rem;
+}
+
+.sequence-block {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.sequence-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.sequence-count {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.selected-sequence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  min-height: 64px;
+  padding: 0.7rem;
+  border: 1px dashed rgba(101, 77, 58, 0.35);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.sequence-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.sequence-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(101, 77, 58, 0.18);
+  background: #fffaf4;
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.sequence-card-index {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(208, 77, 52, 0.12);
+  color: var(--accent-dark);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.sequence-card-label {
+  font-size: 0.92rem;
+  text-align: left;
+}
+
+.card-palette {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.6rem;
+}
+
+.palette-card {
+  padding: 0.75rem 0.85rem;
+  border-radius: 18px;
+  border: 1px solid rgba(101, 77, 58, 0.18);
+  background: rgba(255, 252, 248, 0.96);
+  color: var(--ink);
+  box-shadow: none;
+  min-height: 56px;
+}
+
+.palette-card-name {
+  display: block;
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
 .finished-state {
   border-radius: 20px;
   padding: 1rem;
@@ -614,5 +711,9 @@ th {
 
   .pudding-icon {
     font-size: 1.2rem;
+  }
+
+  .card-palette {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
