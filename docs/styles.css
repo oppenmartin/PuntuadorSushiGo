@@ -192,185 +192,13 @@ th {
     linear-gradient(135deg, #ffd8bf 0%, #f4cda5 50%, #df8f74 100%);
 }
 
-.cover-mockup {
+.cover-image {
   width: min(320px, 100%);
-  aspect-ratio: 0.73;
   margin: 0 auto;
+  display: block;
   border-radius: 28px;
-  background: linear-gradient(180deg, #dc4638 0%, #cc2f29 100%);
   box-shadow: 0 22px 40px rgba(111, 44, 20, 0.25);
   border: 7px solid #5b2b1f;
-  padding: 1rem 0.9rem 0.9rem;
-  display: grid;
-  grid-template-rows: auto auto 1fr auto;
-  gap: 0.6rem;
-}
-
-.cover-title {
-  display: grid;
-  justify-items: center;
-  line-height: 0.9;
-}
-
-.cover-sushi,
-.cover-go {
-  font-size: clamp(2.4rem, 5vw, 3.6rem);
-  font-weight: 900;
-  color: #fff;
-  text-shadow: 3px 3px 0 #48281d;
-}
-
-.cover-go {
-  transform: translateY(-4px);
-}
-
-.cover-subtitle,
-.cover-footer {
-  text-align: center;
-  color: #ffe59f;
-  font-size: 0.95rem;
-  font-weight: 700;
-}
-
-.cover-panels {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr auto;
-  gap: 0.75rem;
-}
-
-.cover-panel {
-  border-radius: 20px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.16));
-  border: 3px solid #5b2b1f;
-  padding: 0.7rem;
-  position: relative;
-  min-height: 110px;
-  overflow: hidden;
-}
-
-.cover-panel-small {
-  min-height: 78px;
-}
-
-.cover-roll,
-.cover-nigiri,
-.cover-gyoza,
-.cover-tempura,
-.cover-wasabi,
-.cover-sashimi-block {
-  position: absolute;
-}
-
-.cover-roll {
-  width: 46px;
-  height: 46px;
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at 50% 36%, #f2ce58 0 18%, transparent 19%),
-    radial-gradient(circle at 50% 50%, #fff 0 44%, #121212 45% 100%);
-  left: 12px;
-  bottom: 18px;
-}
-
-.cover-roll.small {
-  width: 34px;
-  height: 34px;
-  left: 58px;
-  bottom: 48px;
-}
-
-.cover-nigiri {
-  width: 68px;
-  height: 34px;
-  border-radius: 24px;
-  background: #fff;
-  right: 10px;
-  bottom: 16px;
-}
-
-.cover-nigiri::before {
-  content: "";
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  top: 4px;
-  height: 16px;
-  border-radius: 16px;
-}
-
-.cover-nigiri.egg::before {
-  background: #efcd55;
-}
-
-.cover-gyoza {
-  width: 72px;
-  height: 38px;
-  border-radius: 38px 38px 20px 20px;
-  background: linear-gradient(180deg, #fff1dc, #e9be86);
-  left: 10px;
-  bottom: 14px;
-}
-
-.cover-tempura {
-  width: 62px;
-  height: 36px;
-  right: 10px;
-  bottom: 14px;
-  border-radius: 20px;
-  background: linear-gradient(90deg, #e6ad4a, #f0d27b);
-}
-
-.cover-tempura::before,
-.cover-tempura::after {
-  content: "";
-  position: absolute;
-  top: 3px;
-  width: 24px;
-  height: 30px;
-  border-radius: 14px;
-  background: linear-gradient(180deg, #efbe66, #dd8f32);
-}
-
-.cover-tempura::before {
-  left: 5px;
-}
-
-.cover-tempura::after {
-  right: 5px;
-}
-
-.cover-wasabi {
-  width: 42px;
-  height: 42px;
-  border-radius: 28px 28px 20px 20px;
-  background: linear-gradient(180deg, #98c354, #779f45);
-  left: 10px;
-  bottom: 12px;
-}
-
-.cover-age {
-  position: absolute;
-  right: 10px;
-  bottom: 12px;
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: #fff;
-}
-
-.cover-sashimi-block {
-  width: 44px;
-  height: 30px;
-  border-radius: 10px;
-  background: #ef7099;
-  left: 18px;
-  bottom: 18px;
-}
-
-.cover-sashimi-block.alt {
-  background: #f3b04c;
-  left: 54px;
-  bottom: 30px;
 }
 
 .art-badge,
@@ -742,15 +570,18 @@ th {
 }
 
 .sequence-card {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.45rem 0.7rem;
-  border-radius: 999px;
+  display: grid;
+  grid-template-rows: auto auto;
+  justify-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem;
+  width: 90px;
+  border-radius: 18px;
   border: 1px solid rgba(101, 77, 58, 0.18);
   background: #fffaf4;
   color: var(--ink);
   box-shadow: none;
+  position: relative;
 }
 
 .sequence-card-index {
@@ -766,26 +597,27 @@ th {
 }
 
 .sequence-card-label {
-  font-size: 0.92rem;
-  text-align: left;
+  font-size: 0.74rem;
+  text-align: center;
+  line-height: 1.15;
 }
 
 .card-palette {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 0.6rem;
 }
 
 .palette-card {
-  padding: 0.5rem;
-  border-radius: 20px;
+  padding: 0.3rem;
+  border-radius: 18px;
   border: 1px solid rgba(101, 77, 58, 0.18);
   background: rgba(255, 252, 248, 0.96);
   color: var(--ink);
   box-shadow: none;
-  min-height: 150px;
+  min-height: 186px;
   display: grid;
-  grid-template-rows: 24px 1fr auto;
+  grid-template-rows: 1fr auto;
   align-items: stretch;
   text-align: left;
   overflow: hidden;
@@ -793,243 +625,30 @@ th {
 
 .palette-card-name {
   display: block;
-  font-size: 0.95rem;
-  line-height: 1.25;
+  font-size: 0.8rem;
+  line-height: 1.15;
   font-weight: 700;
-  padding: 0.35rem 0.15rem 0.1rem;
+  padding: 0.35rem 0.3rem 0.2rem;
+  text-align: center;
+  min-height: 2.4em;
 }
 
-.mini-card-top {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 0.1rem 0.2rem 0;
+.palette-card-image,
+.sequence-card-thumb {
+  width: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: 14px;
+  box-shadow: 0 10px 20px rgba(61, 35, 22, 0.16);
 }
 
-.mini-card-art {
-  display: grid;
-  place-items: center;
-  border-radius: 16px;
-  margin-top: 0.2rem;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08));
-  position: relative;
+.palette-card-image {
+  aspect-ratio: 0.69;
 }
 
-.palette-maki1,
-.palette-maki2,
-.palette-maki3 {
-  background: linear-gradient(180deg, #d9483d 0 52%, #cfc8c0 52% 100%);
-  color: #fffdf8;
-}
-
-.palette-tempura {
-  background: linear-gradient(180deg, #d9c2ef 0 52%, #cfc8c0 52% 100%);
-}
-
-.palette-sashimi {
-  background: linear-gradient(180deg, #b8df43 0 52%, #cfc8c0 52% 100%);
-}
-
-.palette-gyoza {
-  background: linear-gradient(180deg, #88b8e7 0 52%, #cfc8c0 52% 100%);
-}
-
-.palette-wasabi,
-.palette-nigiri_egg,
-.palette-nigiri_salmon,
-.palette-nigiri_squid {
-  background: linear-gradient(180deg, #f0cf4e 0 52%, #cfc8c0 52% 100%);
-}
-
-.palette-chopsticks {
-  background: linear-gradient(180deg, #8fd7eb 0 52%, #cfc8c0 52% 100%);
-}
-
-.palette-pudding {
-  background: linear-gradient(180deg, #f3cade 0 52%, #cfc8c0 52% 100%);
-}
-
-.mini-maki-group {
-  display: inline-flex;
-  gap: 0.2rem;
-}
-
-.mini-maki-dot {
-  width: 11px;
-  height: 11px;
-  border-radius: 999px;
-  background: #151515;
-  border: 2px solid #fff6eb;
-}
-
-.mini-emoji {
-  font-size: 0.9rem;
-  line-height: 1;
-}
-
-.mini-art-circle {
-  width: 58px;
-  height: 58px;
-  border-radius: 999px;
-}
-
-.mini-art-maki {
-  background:
-    radial-gradient(circle at 50% 37%, #f5d05f 0 14%, transparent 15%),
-    radial-gradient(circle at 50% 40%, #fff 0 35%, #151515 36% 100%);
-  box-shadow: inset 0 -8px 0 rgba(255, 204, 71, 0.78);
-}
-
-.mini-art-tempura {
-  width: 76px;
-  height: 48px;
-  border-radius: 24px;
-  background: transparent;
-  position: relative;
-}
-
-.mini-art-tempura::before,
-.mini-art-tempura::after {
-  content: "";
-  position: absolute;
-  top: 8px;
-  width: 28px;
-  height: 32px;
-  border-radius: 16px;
-  background: linear-gradient(180deg, #efbb58, #dc8b2a);
-}
-
-.mini-art-tempura::before {
-  left: 8px;
-  transform: rotate(-10deg);
-}
-
-.mini-art-tempura::after {
-  right: 8px;
-  transform: rotate(12deg);
-}
-
-.mini-art-stack {
-  display: flex;
-  gap: 0.15rem;
-}
-
-.mini-art-stack span {
-  width: 18px;
-  height: 40px;
-  border-radius: 8px;
-}
-
-.mini-art-stack span:nth-child(1) {
-  background: #f3739e;
-}
-
-.mini-art-stack span:nth-child(2) {
-  background: #f7ae46;
-}
-
-.mini-art-stack span:nth-child(3) {
-  background: #f6d7e6;
-}
-
-.mini-art-dumpling {
-  width: 74px;
-  height: 42px;
-  border-radius: 40px 40px 20px 20px;
-  background: linear-gradient(180deg, #fff2dd, #e7c08d);
-  box-shadow: inset 0 -10px 0 rgba(236, 191, 131, 0.72);
-}
-
-.mini-art-wasabi {
-  width: 50px;
-  height: 50px;
-  border-radius: 34px 34px 28px 28px;
-  background: linear-gradient(180deg, #9fc95a, #7ea248);
-}
-
-.mini-art-nigiri {
-  width: 78px;
-  height: 40px;
-  border-radius: 24px;
-  background: #fbfbf7;
-  position: relative;
-  box-shadow: inset 0 -9px 0 rgba(255, 255, 255, 0.92);
-}
-
-.mini-art-nigiri::before {
-  content: "";
-  position: absolute;
-  left: 10px;
-  right: 10px;
-  top: 4px;
-  height: 18px;
-  border-radius: 18px;
-}
-
-.mini-art-nigiri.nigiri_egg::before {
-  background: #f5d05d;
-}
-
-.mini-art-nigiri.nigiri_salmon::before {
-  background: linear-gradient(90deg, #ef9e46, #f1b45a);
-}
-
-.mini-art-nigiri.nigiri_squid::before {
-  background: #f4f4f4;
-  box-shadow: inset 0 -4px 0 #9ac054;
-}
-
-.mini-art-chopsticks {
-  position: relative;
-  width: 70px;
-  height: 48px;
-}
-
-.mini-art-chopsticks span {
-  position: absolute;
-  width: 48px;
-  height: 4px;
-  border-radius: 999px;
-  background: #7f5a38;
-}
-
-.mini-art-chopsticks span:first-child {
-  top: 16px;
-  left: 10px;
-  transform: rotate(18deg);
-}
-
-.mini-art-chopsticks span:last-child {
-  top: 24px;
-  left: 14px;
-  transform: rotate(18deg);
-}
-
-.mini-art-pudding {
+.sequence-card-thumb {
   width: 56px;
-  height: 58px;
-  border-radius: 18px 18px 24px 24px;
-  background: linear-gradient(180deg, #8e5528 0 22px, #f3d167 22px 100%);
-  position: relative;
-}
-
-.mini-art-pudding::before {
-  content: "";
-  position: absolute;
-  top: -6px;
-  left: 18px;
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  background: #d63b33;
-}
-
-.palette-card::after {
-  content: "";
-  position: absolute;
-  inset: auto 0 0 0;
-  height: 10px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.06));
+  aspect-ratio: 0.69;
 }
 
 .finished-state {

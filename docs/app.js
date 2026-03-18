@@ -13,66 +13,78 @@ const CARD_DEFS = {
     label: 'Maki 1',
     kind: 'maki',
     maki: 1,
+    asset: './assets/Maki1.jpeg',
     aliases: ['maki1', 'maki 1', 'maki x1', 'maki uno']
   },
   maki2: {
     label: 'Maki 2',
     kind: 'maki',
     maki: 2,
+    asset: './assets/Maki2.jpeg',
     aliases: ['maki2', 'maki 2', 'maki x2', 'maki dos']
   },
   maki3: {
     label: 'Maki 3',
     kind: 'maki',
     maki: 3,
+    asset: './assets/Maki3.jpeg',
     aliases: ['maki3', 'maki 3', 'maki x3', 'maki tres']
   },
   chopsticks: {
     label: 'Palillos',
     kind: 'utility',
+    asset: './assets/Palillos.jpeg',
     aliases: ['palillos', 'chopsticks']
   },
   tempura: {
     label: 'Tempura',
     kind: 'set',
+    asset: './assets/Tempura.jpeg',
     aliases: ['tempura']
   },
   sashimi: {
     label: 'Sashimi',
     kind: 'set',
+    asset: './assets/Sashimi.jpeg',
     aliases: ['sashimi']
   },
   gyoza: {
     label: 'Gyoza',
     kind: 'set',
+    asset: './assets/Gyoza.jpeg',
     aliases: ['gyoza']
   },
   wasabi: {
     label: 'Wasabi',
     kind: 'wasabi',
+    asset: './assets/Wasabi.jpeg',
     aliases: ['wasabi']
   },
   nigiri_egg: {
     label: 'Nigiri de tortilla',
     kind: 'nigiri',
     nigiri: 1,
+    asset: './assets/Niguiri huevo.jpeg',
     aliases: ['nigiri de tortilla', 'nigiri tortilla', 'nigiri huevo', 'nigiri egg', 'tortilla', 'huevo']
   },
   nigiri_salmon: {
     label: 'Nigiri de salmon',
     kind: 'nigiri',
     nigiri: 2,
+    asset: './assets/Niguiri Salmon.jpeg',
     aliases: ['nigiri de salmon', 'nigiri salmon', 'salmon', 'salmon']
   },
   nigiri_squid: {
     label: 'Nigiri de calamar',
     kind: 'nigiri',
     nigiri: 3,
+    asset: './assets/Niguiri.jpeg',
     aliases: ['nigiri de calamar', 'nigiri calamar', 'calamar', 'squid']
   },
   pudding: {
     label: 'Pudin',
     kind: 'dessert',
+    asset: './assets/Postre.jpeg',
     aliases: ['pudin', 'pudding', 'postre', 'postres']
   }
 };
@@ -412,6 +424,11 @@ function renderSequenceCards(cards) {
       (cardId, index) => `
         <button type="button" class="sequence-card" data-remove-index="${index}">
           <span class="sequence-card-index">${index + 1}</span>
+          <img
+            class="sequence-card-thumb"
+            src="${CARD_DEFS[cardId]?.asset || ''}"
+            alt="${escapeHtml(CARD_DEFS[cardId]?.label || cardId)}"
+          />
           <span class="sequence-card-label">${escapeHtml(CARD_DEFS[cardId]?.label || cardId)}</span>
         </button>
       `
@@ -423,80 +440,15 @@ function renderCardPalette() {
   return CARD_ORDER.map(
     cardId => `
       <button type="button" class="palette-card palette-${cardId}" data-add-card="${cardId}">
-        <span class="mini-card-top">${renderMiniCardTop(cardId)}</span>
-        <span class="mini-card-art">${renderMiniCardArt(cardId)}</span>
+        <img
+          class="palette-card-image"
+          src="${CARD_DEFS[cardId].asset}"
+          alt="${escapeHtml(CARD_DEFS[cardId].label)}"
+        />
         <span class="palette-card-name">${escapeHtml(CARD_DEFS[cardId].label)}</span>
       </button>
     `
   ).join('');
-}
-
-function renderMiniCardTop(cardId) {
-  if (cardId === 'maki1') {
-    return '<span class="mini-maki-group"><span class="mini-maki-dot"></span></span>';
-  }
-  if (cardId === 'maki2') {
-    return '<span class="mini-maki-group"><span class="mini-maki-dot"></span><span class="mini-maki-dot"></span></span>';
-  }
-  if (cardId === 'maki3') {
-    return '<span class="mini-maki-group"><span class="mini-maki-dot"></span><span class="mini-maki-dot"></span><span class="mini-maki-dot"></span></span>';
-  }
-  if (cardId === 'tempura') {
-    return '<span class="mini-emoji">🍤</span>';
-  }
-  if (cardId === 'sashimi') {
-    return '<span class="mini-emoji">🍣</span>';
-  }
-  if (cardId === 'gyoza') {
-    return '<span class="mini-emoji">🥟</span>';
-  }
-  if (cardId === 'wasabi') {
-    return '<span class="mini-emoji">🟢</span>';
-  }
-  if (cardId === 'nigiri_egg') {
-    return '<span class="mini-emoji">🍥</span>';
-  }
-  if (cardId === 'nigiri_salmon') {
-    return '<span class="mini-emoji">🍣</span>';
-  }
-  if (cardId === 'nigiri_squid') {
-    return '<span class="mini-emoji">🍙</span>';
-  }
-  if (cardId === 'chopsticks') {
-    return '<span class="mini-emoji">🥢</span>';
-  }
-  if (cardId === 'pudding') {
-    return '<span class="mini-emoji">🍮</span>';
-  }
-  return '';
-}
-
-function renderMiniCardArt(cardId) {
-  if (cardId.startsWith('maki')) {
-    return '<span class="mini-art-circle mini-art-maki"></span>';
-  }
-  if (cardId === 'tempura') {
-    return '<span class="mini-art-circle mini-art-tempura"></span>';
-  }
-  if (cardId === 'sashimi') {
-    return '<span class="mini-art-stack"><span></span><span></span><span></span></span>';
-  }
-  if (cardId === 'gyoza') {
-    return '<span class="mini-art-dumpling"></span>';
-  }
-  if (cardId === 'wasabi') {
-    return '<span class="mini-art-wasabi"></span>';
-  }
-  if (cardId === 'nigiri_egg' || cardId === 'nigiri_salmon' || cardId === 'nigiri_squid') {
-    return `<span class="mini-art-nigiri ${cardId}"></span>`;
-  }
-  if (cardId === 'chopsticks') {
-    return '<span class="mini-art-chopsticks"><span></span><span></span></span>';
-  }
-  if (cardId === 'pudding') {
-    return '<span class="mini-art-pudding"></span>';
-  }
-  return '<span class="mini-art-circle"></span>';
 }
 
 async function detectCardsFromPhoto(file) {
@@ -629,35 +581,9 @@ function renderLanding() {
         </form>
       </div>
       <div class="hero-art card">
-        <div class="cover-mockup">
-          <div class="cover-title">
-            <span class="cover-sushi">SUSHI</span>
-            <span class="cover-go">GO!</span>
-          </div>
-          <div class="cover-subtitle">The Pick and Pass Card Game</div>
-          <div class="cover-panels">
-            <div class="cover-panel cover-panel-top-left">
-              <span class="cover-roll"></span>
-              <span class="cover-roll small"></span>
-              <span class="cover-nigiri egg"></span>
-            </div>
-            <div class="cover-panel cover-panel-top-right">
-              <span class="cover-gyoza"></span>
-              <span class="cover-tempura"></span>
-            </div>
-            <div class="cover-panel cover-panel-bottom-left cover-panel-small">
-              <span class="cover-wasabi"></span>
-              <span class="cover-age">Ages 8+</span>
-            </div>
-            <div class="cover-panel cover-panel-bottom-right">
-              <span class="cover-sashimi-block"></span>
-              <span class="cover-sashimi-block alt"></span>
-            </div>
-          </div>
-          <div class="cover-footer">2-5 players</div>
-        </div>
+        <img class="cover-image" src="./assets/sushi-go-cover.jpg" alt="Portada de Sushi Go" />
         <p class="art-caption">
-          Portada estilo caja del juego. Si querés usar la foto exacta, después sumamos el archivo al proyecto.
+          Portada original del juego.
         </p>
       </div>
     </section>
