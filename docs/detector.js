@@ -236,6 +236,18 @@
     return { mask, width, height };
   }
 
+  function rgbToSaturation(color) {
+    const r = color.r / 255;
+    const g = color.g / 255;
+    const b = color.b / 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    if (max === 0) {
+      return 0;
+    }
+    return (max - min) / max;
+  }
+
   function findComponents(maskData) {
     const { mask, width, height } = maskData;
     const visited = new Uint8Array(mask.length);
@@ -483,6 +495,58 @@
     );
   }
 
+  function saturationGridBoxes(canvas) {
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const { width, height } = canvas;
+    const image = ctx.getImageData(0, 0, width, height);
+    const rowSums = new Array(height).fill(0);
+    const colSums = new Array(width).fill(0);
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const index = (y * width + x) * 4;
+        const color = toRgb(image.data, index);
+        const saturation = rgbToSaturation(color);
+        const brightness = (color.r + color.g + color.b) / 3;
+        const active = saturation > 0.18 && brightness > 45 && brightness < 245 ? 1 : 0;
+        rowSums[y] += active;
+        colSums[x] += active;
+      }
+    }
+
+    const rowSpans = spansFromProjection(rowSums, width * 0.012);
+    const boxes = [];
+
+    rowSpans.forEach(row => {
+      const localCols = new Array(width).fill(0);
+      for (let y = row.start; y <= row.end; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const index = (y * width + x) * 4;
+          const color = toRgb(image.data, index);
+          const saturation = rgbToSaturation(color);
+          const brightness = (color.r + color.g + color.b) / 3;
+          if (saturation > 0.18 && brightness > 45 && brightness < 245) {
+            localCols[x] += 1;
+          }
+        }
+      }
+
+      const colSpans = spansFromProjection(localCols, Math.max(2, (row.end - row.start) * 0.06));
+      colSpans.forEach(col => {
+        boxes.push({
+          x: col.start,
+          y: row.start,
+          width: col.end - col.start + 1,
+          height: row.end - row.start + 1
+        });
+      });
+    });
+
+    return normalizeBoxes(
+      boxes.filter(box => box.width / box.height > 0.38 && box.width / box.height < 0.9)
+    );
+  }
+
   function shouldUseGridFallback(boxes, canvas) {
     if (!boxes.length) {
       return true;
@@ -528,12 +592,17 @@
     const mask = buildForegroundMask(canvas);
     const componentBoxes = normalizeBoxes(mergeBoxes(findComponents(mask)));
     const gridBoxes = fallbackGridBoxes(mask);
+    const saturationBoxes = saturationGridBoxes(canvas);
 
     let boxes = componentBoxes;
     if (shouldUseGridFallback(componentBoxes, canvas) && gridBoxes.length > componentBoxes.length) {
       boxes = gridBoxes;
     } else if (!boxes.length) {
       boxes = gridBoxes;
+    }
+
+    if (saturationBoxes.length > boxes.length) {
+      boxes = saturationBoxes;
     }
 
     boxes = sortBoxesReadingOrder(boxes);
