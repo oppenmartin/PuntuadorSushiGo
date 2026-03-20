@@ -140,10 +140,6 @@ function buildPlayers(names) {
     roundCards: Array.from({ length: TOTAL_ROUNDS }, () => []),
     roundScores: Array(TOTAL_ROUNDS).fill(0),
     roundNotes: Array(TOTAL_ROUNDS).fill(''),
-    roundSource: Array(TOTAL_ROUNDS).fill(''),
-    detectedCards: Array.from({ length: TOTAL_ROUNDS }, () => []),
-    detectionDebug: Array(TOTAL_ROUNDS).fill(null),
-    photos: Array(TOTAL_ROUNDS).fill(null),
     puddings: 0,
     puddingScore: 0,
     subtotal: 0,
@@ -461,26 +457,6 @@ function renderCardPalette() {
   ).join('');
 }
 
-async function detectCardsFromPhoto(file) {
-  if (!window.SushiGoDetector) {
-    return { error: 'El detector automatico no esta disponible.' };
-  }
-
-  try {
-    const result = await window.SushiGoDetector.detect(file);
-    if (!result.cards.length) {
-      return {
-        error: 'No pude detectar cartas en la foto. Probá con una imagen mas clara o cargá las cartas manualmente.'
-      };
-    }
-    return result;
-  } catch (error) {
-    return {
-      error: `Fallo el analisis de la imagen. ${error?.message ? `Detalle: ${error.message}. ` : ''}Probá de nuevo o completá las cartas manualmente.`
-    };
-  }
-}
-
 async function applyRoundEntries(formData) {
   const round = state.scoringRound;
   if (!round) {
@@ -490,48 +466,23 @@ async function applyRoundEntries(formData) {
   const expectedCards = getExpectedCardsPerPlayer();
 
   for (const player of state.players) {
-    const image = formData.get(`photo-${player.id}`);
     const sequenceValue = String(formData.get(`sequence-${player.id}`) || '').trim();
-    const hasPhoto = image instanceof File && image.size > 0;
-
-    let cards = [];
-    let source = '';
-
-    if (sequenceValue) {
-      const parsed = parseCardIdSequence(sequenceValue);
-      if (parsed.error) {
-        return `${player.name}: ${parsed.error}`;
-      }
-      cards = parsed.cards;
-      source = 'manual';
-    } else {
-      if (!hasPhoto) {
-        return `Falta subir la foto o cargar las cartas manualmente para ${player.name}.`;
-      }
-      const detected = await detectCardsFromPhoto(image);
-      if (detected.error) {
-        return `${player.name}: ${detected.error}`;
-      }
-      cards = detected.cards;
-      source = 'auto';
+    if (!sequenceValue) {
+      return `Falta cargar las cartas de ${player.name}.`;
     }
 
+    const parsed = parseCardIdSequence(sequenceValue);
+    if (parsed.error) {
+      return `${player.name}: ${parsed.error}`;
+    }
+    const cards = parsed.cards;
+
     if (cards.length !== expectedCards) {
-      return `${player.name}: esperábamos ${expectedCards} cartas y ${
-        source === 'auto' ? 'el detector obtuvo' : 'cargaste'
-      } ${cards.length}.`;
+      return `${player.name}: esperábamos ${expectedCards} cartas y cargaste ${cards.length}.`;
     }
 
     player.roundCards[round - 1] = cards;
     player.roundNotes[round - 1] = formatCards(cards);
-    player.roundSource[round - 1] = source;
-    player.photos[round - 1] = hasPhoto
-      ? {
-          name: image.name,
-          size: image.size,
-          updatedAt: new Date().toISOString()
-        }
-      : null;
   }
 
   computeScores();
@@ -572,9 +523,9 @@ function renderLanding() {
     <section class="hero">
       <div class="hero-copy">
         <span class="eyebrow">Sushi Go Scoreboard</span>
-        <h1>Subí las jugadas, sumá las rondas y definí al ganador.</h1>
+        <h1>Cargá las jugadas, sumá las rondas y definí al ganador.</h1>
         <p>
-          La app queda preparada para detectar cartas en una foto y calcular automáticamente el puntaje de cada ronda.
+          Cargá las cartas manualmente en el orden en que quedaron sobre la mesa y resolvé la partida rápido, sin depender de fotos.
         </p>
         <form id="playerCountForm" class="hero-form card">
           <label for="playerCount">¿Cuántos jugadores van a jugar?</label>
@@ -731,11 +682,7 @@ function renderBoard() {
                         ${
                           !row.isTotal && row.label !== 'Pudines'
                             ? `<div class="cell-meta">${
-                                player.photos[Number(row.label.at(-1)) - 1]
-                                  ? player.roundSource[Number(row.label.at(-1)) - 1] === 'auto'
-                                    ? 'auto'
-                                    : 'manual'
-                                  : ''
+                                (player.roundCards[Number(row.label.at(-1)) - 1] || []).length ? 'manual' : ''
                               }</div>`
                             : ''
                         }
@@ -799,7 +746,7 @@ function renderBoard() {
             }
           </div>
           <p class="support-copy">
-            Podés cargar toda la secuencia manualmente tocando la paleta. La foto es opcional y solo sirve para detección automática.
+            Cargá toda la secuencia tocando la paleta visual. Esta es la única forma de carga para que el flujo sea más rápido y confiable.
           </p>
           <p class="support-copy">
             El orden importa: izquierda a derecha en fila, o por filas de arriba hacia abajo en matriz.
@@ -813,21 +760,7 @@ function renderBoard() {
                       player => `
                         <article class="upload-card">
                           <h4>${escapeHtml(player.name)}</h4>
-                          <label>
-                            Foto de la jugada (opcional)
-                            <input
-                              type="file"
-                              name="photo-${player.id}"
-                              accept="image/*"
-                              capture="environment"
-                              data-file-input="true"
-                            />
-                            <span class="file-hint">Opcional. Si no subís foto, cargá la secuencia manualmente.</span>
-                          </label>
                           <div class="sequence-tools">
-                            <button type="button" class="ghost-btn detect-btn" data-detect-player="${player.id}">
-                              Detectar desde foto
-                            </button>
                             <button type="button" class="ghost-btn clear-btn" data-clear-player="${player.id}">
                               Limpiar
                             </button>
@@ -847,36 +780,6 @@ function renderBoard() {
                             />
                             <div class="selected-sequence" data-sequence-list="${player.id}">
                               ${renderSequenceCards(player.roundCards[state.scoringRound - 1] || [])}
-                            </div>
-                            <div class="detected-preview">
-                              <div class="detected-preview-head">
-                                <strong>Sugerencia detectada</strong>
-                                <span>${
-                                  (player.detectedCards[state.scoringRound - 1] || []).length
-                                    ? `${player.detectedCards[state.scoringRound - 1].length} cartas`
-                                    : 'sin sugerencia'
-                                }</span>
-                              </div>
-                              <div class="selected-sequence selected-sequence-preview" data-detected-list="${player.id}">
-                                ${renderSequenceCards(player.detectedCards[state.scoringRound - 1] || [])}
-                              </div>
-                              ${
-                                player.detectionDebug[state.scoringRound - 1]
-                                  ? `
-                                    <div class="detected-debug">
-                                      <div class="detected-debug-meta">
-                                        <span>Cajas detectadas: ${player.detectionDebug[state.scoringRound - 1].boxCount}</span>
-                                        <span>Cartas clasificadas: ${player.detectionDebug[state.scoringRound - 1].cardCount}</span>
-                                      </div>
-                                      <img
-                                        class="detected-debug-image"
-                                        src="${player.detectionDebug[state.scoringRound - 1].debugImage}"
-                                        alt="Diagnóstico de detección para ${escapeHtml(player.name)}"
-                                      />
-                                    </div>
-                                  `
-                                  : ''
-                              }
                             </div>
                             <div class="card-palette" data-card-palette="${player.id}">
                               ${renderCardPalette()}
@@ -906,6 +809,7 @@ function renderBoard() {
             </div>
           </div>
           <ul class="help-list">
+            <li>Elegí las cartas tocando las miniaturas, en el orden en que aparecieron.</li>
             <li>Tempura: cada pareja suma 5.</li>
             <li>Sashimi: cada trio suma 10.</li>
             <li>Gyoza: 1, 3, 6, 10, 15.</li>
@@ -998,13 +902,6 @@ function bindEvents() {
       }
     };
 
-    const updateDetectedUI = (playerId, cards) => {
-      const list = scoringForm.querySelector(`[data-detected-list="${playerId}"]`);
-      if (list) {
-        list.innerHTML = renderSequenceCards(cards);
-      }
-    };
-
     scoringForm.querySelectorAll('[data-add-card]').forEach(button => {
       button.addEventListener('click', () => {
         const playerId = button.closest('.upload-card').querySelector('[data-sequence-input]').dataset.sequenceInput;
@@ -1043,59 +940,12 @@ function bindEvents() {
       });
     });
 
-    scoringForm.querySelectorAll('[data-detect-player]').forEach(button => {
-      button.addEventListener('click', async () => {
-        const playerId = button.dataset.detectPlayer;
-        const input = scoringForm.querySelector(`[data-sequence-input="${playerId}"]`);
-        const fileInput = scoringForm.querySelector(`input[name="photo-${playerId}"]`);
-        const errorNode = document.querySelector('#scoringError');
-        const file = fileInput?.files?.[0];
-
-        if (!file) {
-          errorNode.textContent = 'Primero elegí una foto antes de detectar.';
-          return;
-        }
-
-        button.disabled = true;
-        button.textContent = 'Detectando...';
-        const detected = await detectCardsFromPhoto(file);
-        if (detected.error) {
-          errorNode.textContent = detected.error;
-        } else {
-          const player = state.players.find(item => item.id === playerId);
-          if (player) {
-            player.detectedCards[state.scoringRound - 1] = [...detected.cards];
-            player.detectionDebug[state.scoringRound - 1] = {
-              boxCount: detected.boxes.length,
-              cardCount: detected.cards.length,
-              debugImage: detected.debugImage
-            };
-          }
-          input.value = detected.cards.join(',');
-          updateSequenceUI(playerId);
-          updateDetectedUI(playerId, detected.cards);
-          errorNode.textContent = '';
-        }
-        button.disabled = false;
-        button.textContent = 'Detectar desde foto';
-      });
-    });
-
-    scoringForm.querySelectorAll('[data-file-input="true"]').forEach(input => {
-      input.addEventListener('change', () => {
-        const hint = input.parentElement.querySelector('.file-hint');
-        if (hint) {
-          hint.textContent = input.files?.[0]?.name || 'Sacá una foto o elegí una imagen desde el teléfono.';
-        }
-      });
-    });
-
     scoringForm.addEventListener('submit', async event => {
       event.preventDefault();
       const submitButton = scoringForm.querySelector('button[type="submit"]');
       if (submitButton) {
         submitButton.disabled = true;
-        submitButton.textContent = 'Analizando...';
+        submitButton.textContent = 'Calculando...';
       }
       const error = await applyRoundEntries(new FormData(scoringForm));
       const errorNode = document.querySelector('#scoringError');
